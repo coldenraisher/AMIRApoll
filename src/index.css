@@ -1,1 +1,70 @@
 @import "tailwindcss";
+
+.graph-glow {
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.15), 0 0 28px rgba(99, 102, 241, 0.18);
+}
+
+.graph-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(48px);
+  opacity: 0.28;
+  pointer-events: none;
+  animation: graphFloat 8s ease-in-out infinite;
+}
+
+.graph-blob-indigo {
+  width: 360px;
+  height: 360px;
+  top: -110px;
+  right: -90px;
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.8), rgba(99, 102, 241, 0));
+}
+
+.graph-blob-cyan {
+  width: 300px;
+  height: 300px;
+  left: -120px;
+  bottom: -100px;
+  animation-delay: 1.2s;
+  background: radial-gradient(circle at center, rgba(34, 211, 238, 0.7), rgba(34, 211, 238, 0));
+}
+
+.graph-bar-fill {
+  animation: graphPulse 2.4s ease-in-out infinite;
+}
+
+.graph-pie-slice {
+  transform-origin: 160px 160px;
+  animation: sliceBreathe 3s ease-in-out infinite;
+}
+
+@keyframes graphFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0) scale(1.04);
+  }
+}
+
+@keyframes graphPulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.14);
+  }
+}
+
+@keyframes sliceBreathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.012);
+  }
+}
