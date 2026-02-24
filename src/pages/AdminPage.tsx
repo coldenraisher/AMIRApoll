@@ -55,6 +55,35 @@ interface EditableOption {
   colorTheme: ColorTheme;
 }
 
+function normalizeEditableOption(option: EditableOption) {
+  return {
+    id: option.id,
+    label: option.label.trim(),
+    colorTheme: option.colorTheme,
+  };
+}
+
+function draftsMatchServer(
+  draftQuestion: string,
+  draftOptions: EditableOption[],
+  serverQuestion: string,
+  serverOptions: PollOption[]
+) {
+  if (draftQuestion.trim() !== serverQuestion.trim()) return false;
+  if (draftOptions.length !== serverOptions.length) return false;
+
+  return draftOptions.every((draft, index) => {
+    const normalizedDraft = normalizeEditableOption(draft);
+    const server = serverOptions[index];
+    if (!server) return false;
+    return (
+      normalizedDraft.id === server.id &&
+      normalizedDraft.label === server.label.trim() &&
+      normalizedDraft.colorTheme === server.colorTheme
+    );
+  });
+}
+
 function ColorPicker({ value, onChange }: { value: ColorTheme; onChange: (theme: ColorTheme) => void }) {
   const colorPreview: Record<ColorTheme, string> = {
     sky: "bg-sky-400",
@@ -162,9 +191,19 @@ export function AdminPage() {
   );
   const [saved, setSaved] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   // Sync state if context changes
   useEffect(() => {
+    if (
+      isDirty &&
+      draftsMatchServer(question, editOptions, currentQuestion, currentOptions)
+    ) {
+      setIsDirty(false);
+      return;
+    }
+
+    if (isDirty) return;
     setQuestion(currentQuestion);
     setEditOptions(
       currentOptions.map((o) => ({
@@ -173,7 +212,7 @@ export function AdminPage() {
         colorTheme: o.colorTheme,
       }))
     );
-  }, [currentQuestion, currentOptions]);
+  }, [currentQuestion, currentOptions, isDirty]);
 
   const buildLiveConfig = (draftQuestion: string, draftOptions: EditableOption[]) => {
     if (draftOptions.length < 2) return null;
@@ -202,16 +241,19 @@ export function AdminPage() {
         colorTheme: availableTheme,
       },
     ];
+    setIsDirty(true);
     setEditOptions(nextOptions);
   };
 
   const removeOption = (index: number) => {
     const nextOptions = editOptions.filter((_, i) => i !== index);
+    setIsDirty(true);
     setEditOptions(nextOptions);
   };
 
   const updateOption = (index: number, updated: EditableOption) => {
     const nextOptions = editOptions.map((o, i) => (i === index ? updated : o));
+    setIsDirty(true);
     setEditOptions(nextOptions);
   };
 
@@ -223,6 +265,7 @@ export function AdminPage() {
       colorTheme: o.colorTheme,
     }));
 
+    setIsDirty(true);
     setQuestion(nextQuestion);
     setEditOptions(nextOptions);
   };
@@ -373,7 +416,10 @@ export function AdminPage() {
               </div>
               <textarea
                 value={question}
-                onChange={(e) => setQuestion(e.target.value)}
+                onChange={(e) => {
+                  setIsDirty(true);
+                  setQuestion(e.target.value);
+                }}
                 placeholder="Type your question here..."
                 rows={2}
                 className="w-full resize-none rounded-xl border-2 border-slate-200 bg-slate-50/50 px-5 py-4 text-xl font-bold text-slate-800 outline-none transition-all placeholder:text-slate-300 focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-100"
