@@ -62,7 +62,6 @@ function ResultBar({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-lg">{option.emoji}</span>
           <span className={cn("text-sm font-semibold", theme.color)}>
             {option.label}
           </span>
@@ -287,10 +286,6 @@ export function PollPage() {
                 </div>
                 <div className="rounded-2xl border border-slate-200/60 bg-white p-5 text-center shadow-sm">
                   <div className="text-2xl font-black text-purple-600">
-                    {options.reduce(
-                      (leader, o) => (o.votes > (leader?.votes ?? 0) ? o : leader),
-                      options[0]
-                    ).emoji}{" "}
                     {options.reduce(
                       (leader, o) => (o.votes > (leader?.votes ?? 0) ? o : leader),
                       options[0]

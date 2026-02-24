@@ -3,8 +3,6 @@ import { cn } from "@/utils/cn";
 import { usePoll, COLOR_THEMES, type PollOption, type ColorTheme } from "@/context/PollContext";
 import { ADMIN_AUTH_KEY, isAdminUnlocked } from "@/utils/adminAuth";
 
-const PRESET_EMOJIS = ["⚛️", "💚", "🅰️", "🔥", "🎯", "🚀", "💡", "⭐", "🏆", "💎", "🎨", "🔮", "🌟", "❤️", "💙", "💜", "🧡", "💛", "🤍", "🖤", "👍", "👎", "✅", "❌", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "🍕", "🍔", "🌮", "🍣", "🎸", "🎮", "📱", "💻", "🐶", "🐱", "🦊"];
-
 const ALL_THEMES: ColorTheme[] = ["sky", "emerald", "red", "orange", "purple", "pink", "amber", "teal", "indigo", "lime"];
 
 const PRESET_POLLS = [
@@ -12,39 +10,39 @@ const PRESET_POLLS = [
     name: "Frontend Framework",
     question: "What's your favorite frontend framework?",
     options: [
-      { label: "React", emoji: "⚛️", colorTheme: "sky" as ColorTheme },
-      { label: "Vue", emoji: "💚", colorTheme: "emerald" as ColorTheme },
-      { label: "Angular", emoji: "🅰️", colorTheme: "red" as ColorTheme },
-      { label: "Svelte", emoji: "🔥", colorTheme: "orange" as ColorTheme },
+      { label: "React", colorTheme: "sky" as ColorTheme },
+      { label: "Vue", colorTheme: "emerald" as ColorTheme },
+      { label: "Angular", colorTheme: "red" as ColorTheme },
+      { label: "Svelte", colorTheme: "orange" as ColorTheme },
     ],
   },
   {
     name: "Yes / No / Maybe",
     question: "Do you agree with the proposal?",
     options: [
-      { label: "Yes", emoji: "✅", colorTheme: "emerald" as ColorTheme },
-      { label: "No", emoji: "❌", colorTheme: "red" as ColorTheme },
-      { label: "Maybe", emoji: "🤔", colorTheme: "amber" as ColorTheme },
+      { label: "Yes", colorTheme: "emerald" as ColorTheme },
+      { label: "No", colorTheme: "red" as ColorTheme },
+      { label: "Maybe", colorTheme: "amber" as ColorTheme },
     ],
   },
   {
     name: "Rating Scale",
     question: "How would you rate today's presentation?",
     options: [
-      { label: "Excellent", emoji: "🤩", colorTheme: "emerald" as ColorTheme },
-      { label: "Good", emoji: "😊", colorTheme: "sky" as ColorTheme },
-      { label: "Average", emoji: "😐", colorTheme: "amber" as ColorTheme },
-      { label: "Needs Improvement", emoji: "😕", colorTheme: "red" as ColorTheme },
+      { label: "Excellent", colorTheme: "emerald" as ColorTheme },
+      { label: "Good", colorTheme: "sky" as ColorTheme },
+      { label: "Average", colorTheme: "amber" as ColorTheme },
+      { label: "Needs Improvement", colorTheme: "red" as ColorTheme },
     ],
   },
   {
     name: "Lunch Vote",
     question: "Where should we go for team lunch?",
     options: [
-      { label: "Pizza", emoji: "🍕", colorTheme: "red" as ColorTheme },
-      { label: "Burgers", emoji: "🍔", colorTheme: "amber" as ColorTheme },
-      { label: "Tacos", emoji: "🌮", colorTheme: "orange" as ColorTheme },
-      { label: "Sushi", emoji: "🍣", colorTheme: "pink" as ColorTheme },
+      { label: "Pizza", colorTheme: "red" as ColorTheme },
+      { label: "Burgers", colorTheme: "amber" as ColorTheme },
+      { label: "Tacos", colorTheme: "orange" as ColorTheme },
+      { label: "Sushi", colorTheme: "pink" as ColorTheme },
     ],
   },
 ];
@@ -54,37 +52,7 @@ const ADMIN_PASSWORD = "amira26";
 interface EditableOption {
   id: string;
   label: string;
-  emoji: string;
   colorTheme: ColorTheme;
-}
-
-function EmojiPicker({ value, onChange, onClose }: { value: string; onChange: (emoji: string) => void; onClose: () => void }) {
-  return (
-    <div className="absolute top-full left-0 z-50 mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pick an Emoji</span>
-        <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <div className="grid grid-cols-8 gap-1">
-        {PRESET_EMOJIS.map((emoji) => (
-          <button
-            key={emoji}
-            onClick={() => { onChange(emoji); onClose(); }}
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-all hover:bg-slate-100 hover:scale-110",
-              value === emoji && "bg-indigo-100 ring-2 ring-indigo-300"
-            )}
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 function ColorPicker({ value, onChange }: { value: ColorTheme; onChange: (theme: ColorTheme) => void }) {
@@ -132,7 +100,6 @@ function OptionEditor({
   onRemove: () => void;
   canRemove: boolean;
 }) {
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const theme = COLOR_THEMES[option.colorTheme];
 
   return (
@@ -155,23 +122,7 @@ function OptionEditor({
       </div>
 
       <div className="space-y-4">
-        {/* Label + Emoji Row */}
         <div className="flex gap-3">
-          <div className="relative">
-            <button
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-slate-200 bg-white text-2xl transition-all hover:border-indigo-300 hover:shadow-sm"
-            >
-              {option.emoji}
-            </button>
-            {showEmojiPicker && (
-              <EmojiPicker
-                value={option.emoji}
-                onChange={(emoji) => onUpdate({ ...option, emoji })}
-                onClose={() => setShowEmojiPicker(false)}
-              />
-            )}
-          </div>
           <input
             type="text"
             value={option.label}
@@ -206,7 +157,6 @@ export function AdminPage() {
     currentOptions.map((o) => ({
       id: o.id,
       label: o.label,
-      emoji: o.emoji,
       colorTheme: o.colorTheme,
     }))
   );
@@ -220,7 +170,6 @@ export function AdminPage() {
       currentOptions.map((o) => ({
         id: o.id,
         label: o.label,
-        emoji: o.emoji,
         colorTheme: o.colorTheme,
       }))
     );
@@ -235,7 +184,6 @@ export function AdminPage() {
       {
         id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`,
         label: "",
-        emoji: "🎯",
         colorTheme: availableTheme,
       },
     ]);
@@ -255,7 +203,6 @@ export function AdminPage() {
       preset.options.map((o, i) => ({
         id: `preset-${i}-${Date.now()}`,
         label: o.label,
-        emoji: o.emoji,
         colorTheme: o.colorTheme,
       }))
     );
@@ -269,7 +216,6 @@ export function AdminPage() {
       id: o.id,
       label: o.label.trim(),
       votes: 0,
-      emoji: o.emoji,
       colorTheme: o.colorTheme,
     }));
 
@@ -558,7 +504,6 @@ export function AdminPage() {
                         <div key={option.id} className="space-y-1">
                           <div className="flex items-center justify-between text-xs">
                             <div className="flex items-center gap-1.5">
-                              <span>{option.emoji}</span>
                               <span className={cn("font-semibold", theme.color)}>
                                 {option.label || "..."}
                               </span>
@@ -588,7 +533,6 @@ export function AdminPage() {
                   <div className="text-xs text-amber-700">
                     <p className="font-semibold">Tips:</p>
                     <ul className="mt-1 space-y-1 list-disc pl-4">
-                      <li>Click the emoji button to pick a different icon</li>
                       <li>Choose colors that help differentiate options</li>
                       <li>Keep labels short for the best visual results</li>
                       <li>Use Quick Templates to start from a preset</li>
