@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { cn } from "@/utils/cn";
 import { usePoll, COLOR_THEMES, type PollOption, type ColorTheme } from "@/context/PollContext";
 
@@ -47,6 +47,9 @@ const PRESET_POLLS = [
     ],
   },
 ];
+
+const ADMIN_PASSWORD = "amira26";
+const ADMIN_AUTH_KEY = "pollAdminUnlocked";
 
 interface EditableOption {
   id: string;
@@ -192,7 +195,14 @@ function OptionEditor({
 }
 
 export function AdminPage() {
-  const { question: currentQuestion, options: currentOptions, updateConfig } = usePoll();
+  const { question: currentQuestion, options: currentOptions, updateConfig, handleReset } = usePoll();
+
+  const [isAuthorized, setIsAuthorized] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem(ADMIN_AUTH_KEY) === "true";
+  });
+  const [adminPassword, setAdminPassword] = useState("");
+  const [authError, setAuthError] = useState("");
 
   const [question, setQuestion] = useState(currentQuestion);
   const [editOptions, setEditOptions] = useState<EditableOption[]>(
@@ -271,7 +281,64 @@ export function AdminPage() {
     setTimeout(() => setSaved(false), 2500);
   };
 
+  const handleUnlock = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (adminPassword === ADMIN_PASSWORD) {
+      setIsAuthorized(true);
+      sessionStorage.setItem(ADMIN_AUTH_KEY, "true");
+      setAdminPassword("");
+      setAuthError("");
+      return;
+    }
+    setAuthError("Incorrect password");
+  };
+
+  const handleLock = () => {
+    setIsAuthorized(false);
+    sessionStorage.removeItem(ADMIN_AUTH_KEY);
+    setAdminPassword("");
+    setAuthError("");
+  };
+
   const isValid = question.trim() !== "" && editOptions.filter((o) => o.label.trim() !== "").length >= 2;
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/30 to-indigo-50/40">
+        <div className="mx-auto flex min-h-screen w-full max-w-md items-center px-5">
+          <div className="w-full rounded-3xl border border-slate-200/70 bg-white p-8 shadow-sm">
+            <h1 className="text-2xl font-bold text-slate-800">Admin Access</h1>
+            <p className="mt-2 text-sm text-slate-500">Enter the admin password to manage this poll.</p>
+            <form className="mt-6 space-y-3" onSubmit={handleUnlock}>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(event) => {
+                  setAdminPassword(event.target.value);
+                  if (authError) setAuthError("");
+                }}
+                placeholder="Password"
+                className="h-12 w-full rounded-xl border-2 border-slate-200 bg-white px-4 text-base font-medium text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              />
+              {authError && <p className="text-sm font-medium text-red-500">{authError}</p>}
+              <button
+                type="submit"
+                className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 px-5 text-sm font-bold text-white transition-all hover:from-violet-600 hover:to-indigo-700"
+              >
+                Unlock Admin
+              </button>
+            </form>
+            <a
+              href="#/poll"
+              className="mt-4 inline-flex text-sm font-semibold text-indigo-600 transition-all hover:text-indigo-700"
+            >
+              Back to Poll
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/30 to-indigo-50/40">
@@ -290,16 +357,24 @@ export function AdminPage() {
               <p className="text-xs text-slate-400">Configure your poll</p>
             </div>
           </div>
-          <a
-            href="#/poll"
-            className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:shadow-sm"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <span className="hidden sm:inline">View Poll</span>
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href="#/poll"
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:shadow-sm"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span className="hidden sm:inline">View Poll</span>
+            </a>
+            <button
+              onClick={handleLock}
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:border-slate-300 hover:bg-slate-50"
+            >
+              Lock
+            </button>
+          </div>
         </div>
       </header>
 
@@ -383,7 +458,7 @@ export function AdminPage() {
               )}
             </div>
 
-            {/* Save Button */}
+            {/* Actions */}
             <div className="flex items-center gap-4">
               <button
                 onClick={handleSave}
@@ -410,6 +485,15 @@ export function AdminPage() {
                     Save & Apply Poll
                   </>
                 )}
+              </button>
+              <button
+                onClick={handleReset}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-red-200 bg-red-50 px-6 py-3.5 text-base font-bold text-red-600 transition-all hover:bg-red-100 active:scale-95"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Reset Poll
               </button>
               {!isValid && (
                 <p className="text-sm text-red-500">

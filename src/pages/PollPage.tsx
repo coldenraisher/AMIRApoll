@@ -146,12 +146,9 @@ export function PollPage() {
     hasVoted,
     votedFor,
     showConfetti,
-    simulateActive,
     totalVotes,
     maxVotes,
     handleVote,
-    handleReset,
-    toggleSimulate,
   } = usePoll();
 
   return (
@@ -226,45 +223,6 @@ export function PollPage() {
               ))}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={handleReset}
-                className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition-all hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm active:scale-95"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Reset Poll
-              </button>
-              <button
-                onClick={toggleSimulate}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-xl border-2 px-5 py-2.5 text-sm font-semibold transition-all active:scale-95",
-                  simulateActive
-                    ? "border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
-                    : "border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
-                )}
-              >
-                {simulateActive ? (
-                  <>
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
-                    </svg>
-                    Stop Simulation
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Simulate Votes
-                  </>
-                )}
-              </button>
-            </div>
           </div>
 
           {/* Right: Results */}
@@ -300,7 +258,7 @@ export function PollPage() {
                     No votes yet
                   </p>
                   <p className="text-xs text-slate-300">
-                    Cast the first vote or simulate!
+                    Cast the first vote!
                   </p>
                 </div>
               ) : (
