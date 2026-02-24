@@ -45,11 +45,14 @@ export function AdminGraphPage() {
   if (!isAuthorized) return <UnauthorizedView />;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
+      <div className="graph-blob graph-blob-indigo" />
+      <div className="graph-blob graph-blob-cyan" />
+
       <div className="absolute left-5 top-5 z-20 flex items-center gap-2">
         <a
           href="#/admin"
-          className="rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text-slate-100 backdrop-blur"
+          className="rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text-slate-100 backdrop-blur transition-all hover:border-indigo-400"
         >
           Back to Admin
         </a>
@@ -61,7 +64,7 @@ export function AdminGraphPage() {
             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Live Vote Graph</p>
             <h1 className="mt-2 text-2xl font-bold text-white sm:text-4xl">{question}</h1>
           </div>
-          <div className="rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2 text-right">
+          <div className="graph-glow rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2 text-right">
             <p className="text-xs text-slate-400">Total Votes</p>
             <p className="text-2xl font-black tabular-nums sm:text-4xl">{totalVotes}</p>
           </div>
@@ -98,14 +101,14 @@ export function AdminGraphPage() {
               const theme = COLOR_THEMES[option.colorTheme];
               const widthPercentage = maxVotes > 0 ? (option.votes / maxVotes) * 100 : 0;
               return (
-                <div key={option.id} className="flex items-center gap-4">
+                <div key={option.id} className="graph-glow flex items-center gap-4 rounded-2xl border border-slate-800/80 bg-slate-900/70 p-3">
                   <div className="w-40 shrink-0 text-sm font-semibold text-slate-200 sm:w-56 sm:text-lg">
                     {option.label}
                   </div>
                   <div className="relative h-14 flex-1 overflow-hidden rounded-xl border border-slate-700 bg-slate-900">
                     <div
                       className={cn(
-                        "absolute inset-y-0 left-0 rounded-xl bg-gradient-to-r transition-all duration-700 ease-out",
+                        "graph-bar-fill absolute inset-y-0 left-0 rounded-xl bg-gradient-to-r transition-all duration-700 ease-out",
                         theme.barColor
                       )}
                       style={{ width: `${Math.max(widthPercentage, option.votes > 0 ? 2 : 0)}%` }}
@@ -131,9 +134,9 @@ export function AdminGraphPage() {
                   <div
                     key={option.id}
                     className={cn(
-                      "flex items-center justify-between rounded-xl border px-4 py-3",
+                      "graph-glow flex items-center justify-between rounded-xl border px-4 py-3",
                       theme.borderColor,
-                      "bg-slate-900"
+                      "bg-slate-900/80"
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -194,8 +197,13 @@ function PieChart({
     <div className="flex h-full items-center justify-center">
       <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4">
         <svg viewBox={`0 0 ${size} ${size}`} className="h-72 w-72 sm:h-80 sm:w-80">
-          {slices.map((slice) => (
-            <path key={slice.id} d={slice.path} style={{ fill: slice.color }} />
+          {slices.map((slice, index) => (
+            <path
+              key={slice.id}
+              d={slice.path}
+              className="graph-pie-slice"
+              style={{ fill: slice.color, animationDelay: `${index * 80}ms` }}
+            />
           ))}
           <circle cx={center} cy={center} r={58} className="fill-slate-950" />
           <text
