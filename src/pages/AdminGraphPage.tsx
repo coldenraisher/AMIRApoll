@@ -4,17 +4,26 @@ import { cn } from "@/utils/cn";
 import { isAdminUnlocked } from "@/utils/adminAuth";
 
 const PIE_COLORS = {
-  sky: "#0369a1",
-  emerald: "#047857",
-  red: "#b91c1c",
-  orange: "#c2410c",
-  purple: "#7e22ce",
-  pink: "#be185d",
-  amber: "#b45309",
-  teal: "#0f766e",
-  indigo: "#3730a3",
-  lime: "#4d7c0f",
+  sky: "#00d4ff",
+  emerald: "#00ffa3",
+  red: "#ff3b6b",
+  orange: "#ff7a00",
+  purple: "#b026ff",
+  pink: "#ff2bd6",
+  amber: "#ffd000",
+  teal: "#00f0ff",
+  indigo: "#6b7cff",
+  lime: "#b7ff00",
 } as const;
+
+function hexToRgba(hex: string, alpha: number) {
+  const normalized = hex.replace("#", "");
+  const bigint = Number.parseInt(normalized, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 function UnauthorizedView() {
   return (
@@ -45,7 +54,7 @@ export function AdminGraphPage() {
   if (!isAuthorized) return <UnauthorizedView />;
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
+    <div className="relative min-h-screen overflow-hidden bg-[#05070f] text-white">
       <div className="graph-blob graph-blob-indigo" />
       <div className="graph-blob graph-blob-cyan" />
 
@@ -64,7 +73,7 @@ export function AdminGraphPage() {
             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Live Vote Graph</p>
             <h1 className="mt-2 text-2xl font-bold text-white sm:text-4xl">{question}</h1>
           </div>
-          <div className="graph-glow rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2 text-right">
+          <div className="graph-glow rounded-xl border border-cyan-400/30 bg-slate-900/80 px-4 py-2 text-right">
             <p className="text-xs text-slate-400">Total Votes</p>
             <p className="text-2xl font-black tabular-nums sm:text-4xl">{totalVotes}</p>
           </div>
@@ -105,7 +114,7 @@ export function AdminGraphPage() {
                   <div className="w-40 shrink-0 text-sm font-semibold text-slate-200 sm:w-56 sm:text-lg">
                     {option.label}
                   </div>
-                  <div className="relative h-14 flex-1 overflow-hidden rounded-xl border border-slate-700 bg-slate-900">
+                  <div className="relative h-14 flex-1 overflow-hidden rounded-xl border border-cyan-400/25 bg-slate-900">
                     <div
                       className={cn(
                         "graph-bar-fill absolute inset-y-0 left-0 rounded-xl bg-gradient-to-r transition-all duration-700 ease-out",
@@ -128,27 +137,27 @@ export function AdminGraphPage() {
             <PieChart options={options} totalVotes={totalVotes} />
             <div className="space-y-3">
               {options.map((option) => {
-                const theme = COLOR_THEMES[option.colorTheme];
                 const percentage = totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0;
+                const neon = PIE_COLORS[option.colorTheme];
                 return (
                   <div
                     key={option.id}
-                    className={cn(
-                      "graph-glow flex items-center justify-between rounded-xl border px-4 py-3",
-                      theme.borderColor,
-                      "bg-slate-900/80"
-                    )}
+                    className={cn("graph-glow flex items-center justify-between rounded-xl border px-4 py-3")}
+                    style={{
+                      borderColor: hexToRgba(neon, 0.55),
+                      background: `linear-gradient(135deg, ${hexToRgba(neon, 0.12)}, rgba(8,16,40,0.8) 48%)`,
+                    }}
                   >
                     <div className="flex items-center gap-3">
                       <span
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: PIE_COLORS[option.colorTheme] }}
+                        className="h-3.5 w-3.5 rounded-full shadow-[0_0_12px]"
+                        style={{ backgroundColor: neon, boxShadow: `0 0 16px ${hexToRgba(neon, 0.85)}` }}
                       />
                       <span className="text-sm font-semibold text-slate-100 sm:text-base">{option.label}</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-base font-bold tabular-nums text-white">{option.votes}</p>
-                      <p className="text-xs text-slate-400">{percentage}%</p>
+                      <p className="text-lg font-bold tabular-nums text-white">{option.votes}</p>
+                      <p className="text-xs font-medium text-slate-300">{percentage}%</p>
                     </div>
                   </div>
                 );
@@ -168,56 +177,42 @@ function PieChart({
   options: Array<{ id: string; votes: number; colorTheme: keyof typeof COLOR_THEMES }>;
   totalVotes: number;
 }) {
-  const size = 320;
-  const radius = 120;
-  const center = size / 2;
+  const slices = options.map((option) => ({
+    id: option.id,
+    votes: option.votes,
+    color: PIE_COLORS[option.colorTheme],
+  }));
+  const gradientStops: string[] = [];
+  let runningPercent = 0;
 
-  let runningAngle = -Math.PI / 2;
-  const slices = options.map((option) => {
-    const value = totalVotes > 0 ? option.votes / totalVotes : 1 / options.length;
-    const angle = value * Math.PI * 2;
-    const start = runningAngle;
-    const end = runningAngle + angle;
-    runningAngle = end;
+  for (const slice of slices) {
+    const portion = totalVotes > 0 ? (slice.votes / totalVotes) * 100 : 100 / Math.max(slices.length, 1);
+    const start = runningPercent;
+    const end = runningPercent + portion;
+    gradientStops.push(`${slice.color} ${start}% ${end}%`);
+    runningPercent = end;
+  }
 
-    const x1 = center + radius * Math.cos(start);
-    const y1 = center + radius * Math.sin(start);
-    const x2 = center + radius * Math.cos(end);
-    const y2 = center + radius * Math.sin(end);
-    const largeArcFlag = angle > Math.PI ? 1 : 0;
-    const path = `M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
-    return {
-      id: option.id,
-      path,
-      color: PIE_COLORS[option.colorTheme],
-    };
-  });
+  const donutBackground =
+    slices.length > 0
+      ? `conic-gradient(from -90deg, ${gradientStops.join(", ")})`
+      : "conic-gradient(from -90deg, #1f2937 0% 100%)";
 
   return (
     <div className="flex h-full items-center justify-center">
-      <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4">
-        <svg viewBox={`0 0 ${size} ${size}`} className="h-72 w-72 sm:h-80 sm:w-80">
-          {slices.map((slice, index) => (
-            <path
-              key={slice.id}
-              d={slice.path}
-              className="graph-pie-slice"
-              style={{ fill: slice.color, animationDelay: `${index * 80}ms` }}
-            />
-          ))}
-          <circle cx={center} cy={center} r={58} className="fill-slate-950" />
-          <text
-            x={center}
-            y={center - 8}
-            textAnchor="middle"
-            className="fill-white text-2xl font-black tabular-nums"
-          >
-            {totalVotes}
-          </text>
-          <text x={center} y={center + 14} textAnchor="middle" className="fill-slate-400 text-xs">
-            total votes
-          </text>
-        </svg>
+      <div className="graph-glow relative rounded-2xl border border-cyan-400/40 bg-slate-900/80 p-5">
+        <div className="graph-pie-halo" />
+        <div
+          className="graph-pie-donut relative h-72 w-72 rounded-full sm:h-80 sm:w-80"
+          style={{ background: donutBackground }}
+        >
+          <div className="absolute inset-0 rounded-full opacity-75 [mask-image:radial-gradient(circle,transparent_52%,black_72%)] bg-[linear-gradient(120deg,rgba(255,255,255,0.2),transparent_45%)]" />
+          <div className="absolute inset-[27%] rounded-full border border-cyan-300/20 bg-[#030617]/90 shadow-[inset_0_0_30px_rgba(0,0,0,0.55)]" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <p className="text-4xl font-black tabular-nums text-white">{totalVotes}</p>
+            <p className="text-xs tracking-wide text-cyan-200/80">total votes</p>
+          </div>
+        </div>
       </div>
     </div>
   );
