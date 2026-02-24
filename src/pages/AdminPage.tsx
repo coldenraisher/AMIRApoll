@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { cn } from "@/utils/cn";
 import { usePoll, COLOR_THEMES, type PollOption, type ColorTheme } from "@/context/PollContext";
+import { ADMIN_AUTH_KEY, isAdminUnlocked } from "@/utils/adminAuth";
 
 const PRESET_EMOJIS = ["⚛️", "💚", "🅰️", "🔥", "🎯", "🚀", "💡", "⭐", "🏆", "💎", "🎨", "🔮", "🌟", "❤️", "💙", "💜", "🧡", "💛", "🤍", "🖤", "👍", "👎", "✅", "❌", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "🍕", "🍔", "🌮", "🍣", "🎸", "🎮", "📱", "💻", "🐶", "🐱", "🦊"];
 
@@ -49,7 +50,6 @@ const PRESET_POLLS = [
 ];
 
 const ADMIN_PASSWORD = "amira26";
-const ADMIN_AUTH_KEY = "pollAdminUnlocked";
 
 interface EditableOption {
   id: string;
@@ -197,10 +197,7 @@ function OptionEditor({
 export function AdminPage() {
   const { question: currentQuestion, options: currentOptions, updateConfig, handleReset } = usePoll();
 
-  const [isAuthorized, setIsAuthorized] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return sessionStorage.getItem(ADMIN_AUTH_KEY) === "true";
-  });
+  const [isAuthorized, setIsAuthorized] = useState(isAdminUnlocked);
   const [adminPassword, setAdminPassword] = useState("");
   const [authError, setAuthError] = useState("");
 
@@ -374,6 +371,12 @@ export function AdminPage() {
             >
               Lock
             </button>
+            <a
+              href="#/admin/graph"
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition-all hover:bg-indigo-100"
+            >
+              Graph View
+            </a>
           </div>
         </div>
       </header>
