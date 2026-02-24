@@ -538,7 +538,6 @@ export function AdminPage() {
                             theme.borderColor
                           )}
                         >
-                          <span className="text-xl">{option.emoji}</span>
                           <span className={cn("text-sm font-semibold", theme.color)}>
                             {option.label || "..."}
                           </span>

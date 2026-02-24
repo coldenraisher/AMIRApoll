@@ -29,7 +29,6 @@ function VoteButton({
           `${theme.bgColor} ${theme.borderColor} ${theme.hoverColor} cursor-pointer hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]`
       )}
     >
-      <span className="text-2xl">{option.emoji}</span>
       <span className={cn("text-lg font-semibold", theme.color)}>
         {option.label}
       </span>
