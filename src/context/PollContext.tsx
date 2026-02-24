@@ -12,7 +12,6 @@ export interface PollOption {
   id: string;
   label: string;
   votes: number;
-  emoji: string;
   colorTheme: ColorTheme;
 }
 
@@ -112,10 +111,10 @@ const AVAILABLE_THEMES = Object.keys(COLOR_THEMES) as ColorTheme[];
 const DEFAULT_QUESTION = "What's your favorite frontend framework?";
 
 const DEFAULT_OPTIONS: PollOption[] = [
-  { id: "a", label: "React", votes: 0, emoji: "⚛️", colorTheme: "sky" },
-  { id: "b", label: "Vue", votes: 0, emoji: "💚", colorTheme: "emerald" },
-  { id: "c", label: "Angular", votes: 0, emoji: "🅰️", colorTheme: "red" },
-  { id: "d", label: "Svelte", votes: 0, emoji: "🔥", colorTheme: "orange" },
+  { id: "a", label: "React", votes: 0, colorTheme: "sky" },
+  { id: "b", label: "Vue", votes: 0, colorTheme: "emerald" },
+  { id: "c", label: "Angular", votes: 0, colorTheme: "red" },
+  { id: "d", label: "Svelte", votes: 0, colorTheme: "orange" },
 ];
 
 interface PollConfig {
@@ -134,12 +133,10 @@ interface PollContextType {
   hasVoted: boolean;
   votedFor: string | null;
   showConfetti: boolean;
-  simulateActive: boolean;
   totalVotes: number;
   maxVotes: number;
   handleVote: (id: string) => void;
   handleReset: () => void;
-  toggleSimulate: () => void;
   updateConfig: (config: PollConfig) => void;
 }
 
@@ -154,7 +151,6 @@ function normalizeOptions(options: PollOption[]): PollOption[] {
     id: option.id || `option-${index + 1}`,
     label: option.label,
     votes: Math.max(option.votes || 0, 0),
-    emoji: option.emoji || "🎯",
     colorTheme: option.colorTheme || AVAILABLE_THEMES[index % AVAILABLE_THEMES.length],
   }));
 }
@@ -200,10 +196,9 @@ function saveState(state: PersistedPollState) {
     LEGACY_CONFIG_KEY,
     JSON.stringify({
       question: state.question,
-      options: state.options.map(({ id, label, emoji, colorTheme }) => ({
+      options: state.options.map(({ id, label, colorTheme }) => ({
         id,
         label,
-        emoji,
         colorTheme,
       })),
     })
@@ -227,20 +222,10 @@ export function PollProvider({ children }: { children: ReactNode }) {
   const [hasVoted, setHasVoted] = useState(initialVotedForRef.current !== null);
   const [votedFor, setVotedFor] = useState<string | null>(initialVotedForRef.current);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [simulateActive, setSimulateActive] = useState(false);
-  const simulateRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalVotes = options.reduce((sum, o) => sum + o.votes, 0);
   const maxVotes = Math.max(...options.map((o) => o.votes), 0);
-
-  const stopSimulation = useCallback(() => {
-    if (simulateRef.current) {
-      clearInterval(simulateRef.current);
-      simulateRef.current = null;
-    }
-    setSimulateActive(false);
-  }, []);
 
   const handleVote = useCallback(
     (id: string) => {
@@ -264,24 +249,7 @@ export function PollProvider({ children }: { children: ReactNode }) {
     setHasVoted(false);
     setVotedFor(null);
     localStorage.removeItem(VOTED_FOR_KEY);
-    stopSimulation();
-  }, [stopSimulation]);
-
-  const toggleSimulate = useCallback(() => {
-    if (simulateRef.current) {
-      stopSimulation();
-      return;
-    }
-
-    setSimulateActive(true);
-    simulateRef.current = setInterval(() => {
-      setOptions((prev) => {
-        const count = prev.length;
-        const chosenIdx = Math.floor(Math.random() * count);
-        return prev.map((o, i) => (i === chosenIdx ? { ...o, votes: o.votes + 1 } : o));
-      });
-    }, 300);
-  }, [stopSimulation]);
+  }, []);
 
   const updateConfig = useCallback((config: PollConfig) => {
     const normalized = normalizeState({
@@ -290,13 +258,18 @@ export function PollProvider({ children }: { children: ReactNode }) {
     });
 
     setQuestion(normalized.question);
-    setOptions(normalized.options);
+    setOptions((prevOptions) => {
+      const preservedVotes = new Map(prevOptions.map((option) => [option.id, option.votes]));
+      return normalized.options.map((option) => ({
+        ...option,
+        votes: preservedVotes.get(option.id) ?? 0,
+      }));
+    });
     setHasVoted(false);
     setVotedFor(null);
     localStorage.removeItem(VOTED_FOR_KEY);
-    stopSimulation();
     saveState(normalized);
-  }, [stopSimulation]);
+  }, []);
 
   useEffect(() => {
     saveState({ question, options });
@@ -332,7 +305,6 @@ export function PollProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return () => {
-      if (simulateRef.current) clearInterval(simulateRef.current);
       if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
     };
   }, []);
@@ -345,12 +317,10 @@ export function PollProvider({ children }: { children: ReactNode }) {
         hasVoted,
         votedFor,
         showConfetti,
-        simulateActive,
         totalVotes,
         maxVotes,
         handleVote,
         handleReset,
-        toggleSimulate,
         updateConfig,
       }}
     >

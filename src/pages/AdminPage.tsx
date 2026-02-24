@@ -175,51 +175,70 @@ export function AdminPage() {
     );
   }, [currentQuestion, currentOptions]);
 
+  const buildLiveConfig = (draftQuestion: string, draftOptions: EditableOption[]) => {
+    if (draftOptions.length < 2) return null;
+    const options: PollOption[] = draftOptions.map((option, index) => ({
+      id: option.id,
+      label: option.label.trim() || `Option ${index + 1}`,
+      votes: 0,
+      colorTheme: option.colorTheme,
+    }));
+
+    return {
+      question: draftQuestion.trim() || "Untitled poll question",
+      options,
+    };
+  };
+
+  const applyDraft = (draftQuestion: string, draftOptions: EditableOption[]) => {
+    const nextConfig = buildLiveConfig(draftQuestion, draftOptions);
+    if (!nextConfig) return;
+    updateConfig(nextConfig);
+  };
+
   const addOption = () => {
     if (editOptions.length >= 6) return;
     const usedThemes = editOptions.map((o) => o.colorTheme);
     const availableTheme = ALL_THEMES.find((t) => !usedThemes.includes(t)) || "sky";
-    setEditOptions([
+    const nextOptions = [
       ...editOptions,
       {
         id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`,
         label: "",
         colorTheme: availableTheme,
       },
-    ]);
+    ];
+    setEditOptions(nextOptions);
+    applyDraft(question, nextOptions);
   };
 
   const removeOption = (index: number) => {
-    setEditOptions(editOptions.filter((_, i) => i !== index));
+    const nextOptions = editOptions.filter((_, i) => i !== index);
+    setEditOptions(nextOptions);
+    applyDraft(question, nextOptions);
   };
 
   const updateOption = (index: number, updated: EditableOption) => {
-    setEditOptions(editOptions.map((o, i) => (i === index ? updated : o)));
+    const nextOptions = editOptions.map((o, i) => (i === index ? updated : o));
+    setEditOptions(nextOptions);
+    applyDraft(question, nextOptions);
   };
 
   const loadPreset = (preset: typeof PRESET_POLLS[0]) => {
-    setQuestion(preset.question);
-    setEditOptions(
-      preset.options.map((o, i) => ({
-        id: `preset-${i}-${Date.now()}`,
-        label: o.label,
-        colorTheme: o.colorTheme,
-      }))
-    );
-  };
-
-  const handleSave = () => {
-    const validOptions = editOptions.filter((o) => o.label.trim() !== "");
-    if (validOptions.length < 2 || !question.trim()) return;
-
-    const newOptions: PollOption[] = validOptions.map((o) => ({
-      id: o.id,
-      label: o.label.trim(),
-      votes: 0,
+    const nextQuestion = preset.question;
+    const nextOptions = preset.options.map((o, i) => ({
+      id: `preset-${i}-${Date.now()}`,
+      label: o.label,
       colorTheme: o.colorTheme,
     }));
 
-    updateConfig({ question: question.trim(), options: newOptions });
+    setQuestion(nextQuestion);
+    setEditOptions(nextOptions);
+    applyDraft(nextQuestion, nextOptions);
+  };
+
+  const handleSave = () => {
+    applyDraft(question, editOptions);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -243,7 +262,7 @@ export function AdminPage() {
     setAuthError("");
   };
 
-  const isValid = question.trim() !== "" && editOptions.filter((o) => o.label.trim() !== "").length >= 2;
+  const isValid = editOptions.length >= 2;
 
   if (!isAuthorized) {
     return (
@@ -362,7 +381,11 @@ export function AdminPage() {
               </div>
               <textarea
                 value={question}
-                onChange={(e) => setQuestion(e.target.value)}
+                onChange={(e) => {
+                  const nextQuestion = e.target.value;
+                  setQuestion(nextQuestion);
+                  applyDraft(nextQuestion, editOptions);
+                }}
                 placeholder="Type your question here..."
                 rows={2}
                 className="w-full resize-none rounded-xl border-2 border-slate-200 bg-slate-50/50 px-5 py-4 text-xl font-bold text-slate-800 outline-none transition-all placeholder:text-slate-300 focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-100"
