@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { cn } from "@/utils/cn";
 import { usePoll, COLOR_THEMES, type PollOption, type ColorTheme } from "@/context/PollContext";
-
-const ADMIN_PASSWORD = "amira";
+import { ADMIN_AUTH_KEY, isAdminUnlocked } from "@/utils/adminAuth";
 
 const ALL_THEMES: ColorTheme[] = ["sky", "emerald", "red", "orange", "purple", "pink", "amber", "teal", "indigo", "lime"];
 
@@ -47,6 +46,8 @@ const PRESET_POLLS = [
     ],
   },
 ];
+
+const ADMIN_PASSWORD = "amira26";
 
 interface EditableOption {
   id: string;
@@ -121,14 +122,15 @@ function OptionEditor({
       </div>
 
       <div className="space-y-4">
-        {/* Label Input */}
-        <input
-          type="text"
-          value={option.label}
-          onChange={(e) => onUpdate({ ...option, label: e.target.value })}
-          placeholder="Option label..."
-          className="h-12 w-full rounded-xl border-2 border-slate-200 bg-white px-4 text-base font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-        />
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={option.label}
+            onChange={(e) => onUpdate({ ...option, label: e.target.value })}
+            placeholder="Option label..."
+            className="h-12 flex-1 rounded-xl border-2 border-slate-200 bg-white px-4 text-base font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+          />
+        </div>
 
         {/* Color Picker */}
         <div>
@@ -143,123 +145,12 @@ function OptionEditor({
   );
 }
 
-function LoginScreen({ onLogin }: { onLogin: () => void }) {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState(false);
-  const [shake, setShake] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      onLogin();
-    } else {
-      setError(true);
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-    }
-  };
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-violet-50/30 to-indigo-50/40 px-4">
-      <div
-        className={cn(
-          "w-full max-w-md rounded-3xl border border-slate-200/60 bg-white p-8 shadow-xl transition-transform sm:p-10",
-          shake && "animate-[shake_0.5s_ease-in-out]"
-        )}
-      >
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg">
-            <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-black text-slate-800">Admin Access</h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Enter the password to access the admin panel
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-600">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setError(false);
-              }}
-              placeholder="Enter admin password"
-              className={cn(
-                "w-full rounded-xl border-2 px-4 py-3 text-base font-medium text-slate-800 outline-none transition-all placeholder:text-slate-300 focus:ring-2",
-                error
-                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                  : "border-slate-200 focus:border-violet-400 focus:ring-violet-100"
-              )}
-              autoFocus
-            />
-            {error && (
-              <p className="mt-2 text-sm font-medium text-red-500">
-                Incorrect password. Please try again.
-              </p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 px-6 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:from-violet-600 hover:to-indigo-700 hover:shadow-xl active:scale-[0.98]"
-          >
-            Sign In
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <a
-            href="#/poll"
-            className="text-sm font-medium text-slate-400 transition-colors hover:text-indigo-500"
-          >
-            Back to Poll
-          </a>
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-          20%, 40%, 60%, 80% { transform: translateX(4px); }
-        }
-      `}</style>
-    </div>
-  );
-}
-
 export function AdminPage() {
-  const [authenticated, setAuthenticated] = useState(false);
+  const { question: currentQuestion, options: currentOptions, updateConfig, handleReset } = usePoll();
 
-  // Check sessionStorage for existing auth
-  useEffect(() => {
-    const isAuth = sessionStorage.getItem("pollAdminAuth");
-    if (isAuth === "true") setAuthenticated(true);
-  }, []);
-
-  const handleLogin = () => {
-    setAuthenticated(true);
-    sessionStorage.setItem("pollAdminAuth", "true");
-  };
-
-  if (!authenticated) {
-    return <LoginScreen onLogin={handleLogin} />;
-  }
-
-  return <AdminPanel />;
-}
-
-function AdminPanel() {
-  const { question: currentQuestion, options: currentOptions, totalVotes, updateConfig, handleReset } = usePoll();
+  const [isAuthorized, setIsAuthorized] = useState(isAdminUnlocked);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [authError, setAuthError] = useState("");
 
   const [question, setQuestion] = useState(currentQuestion);
   const [editOptions, setEditOptions] = useState<EditableOption[]>(
@@ -271,7 +162,6 @@ function AdminPanel() {
   );
   const [saved, setSaved] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Sync state if context changes
   useEffect(() => {
@@ -285,66 +175,124 @@ function AdminPanel() {
     );
   }, [currentQuestion, currentOptions]);
 
+  const buildLiveConfig = (draftQuestion: string, draftOptions: EditableOption[]) => {
+    if (draftOptions.length < 2) return null;
+    const options: PollOption[] = draftOptions.map((option, index) => ({
+      id: option.id,
+      label: option.label.trim() || `Option ${index + 1}`,
+      votes: 0,
+      colorTheme: option.colorTheme,
+    }));
+
+    return {
+      question: draftQuestion.trim() || "Untitled poll question",
+      options,
+    };
+  };
+
   const addOption = () => {
     if (editOptions.length >= 6) return;
     const usedThemes = editOptions.map((o) => o.colorTheme);
     const availableTheme = ALL_THEMES.find((t) => !usedThemes.includes(t)) || "sky";
-    setEditOptions([
+    const nextOptions = [
       ...editOptions,
       {
         id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`,
         label: "",
         colorTheme: availableTheme,
       },
-    ]);
+    ];
+    setEditOptions(nextOptions);
   };
 
   const removeOption = (index: number) => {
-    setEditOptions(editOptions.filter((_, i) => i !== index));
+    const nextOptions = editOptions.filter((_, i) => i !== index);
+    setEditOptions(nextOptions);
   };
 
   const updateOption = (index: number, updated: EditableOption) => {
-    setEditOptions(editOptions.map((o, i) => (i === index ? updated : o)));
+    const nextOptions = editOptions.map((o, i) => (i === index ? updated : o));
+    setEditOptions(nextOptions);
   };
 
   const loadPreset = (preset: typeof PRESET_POLLS[0]) => {
-    setQuestion(preset.question);
-    setEditOptions(
-      preset.options.map((o, i) => ({
-        id: `preset-${i}-${Date.now()}`,
-        label: o.label,
-        colorTheme: o.colorTheme,
-      }))
-    );
-  };
-
-  const handleSave = () => {
-    const validOptions = editOptions.filter((o) => o.label.trim() !== "");
-    if (validOptions.length < 2 || !question.trim()) return;
-
-    const newOptions: PollOption[] = validOptions.map((o) => ({
-      id: o.id,
-      label: o.label.trim(),
-      votes: 0,
+    const nextQuestion = preset.question;
+    const nextOptions = preset.options.map((o, i) => ({
+      id: `preset-${i}-${Date.now()}`,
+      label: o.label,
       colorTheme: o.colorTheme,
     }));
 
-    updateConfig({ question: question.trim(), options: newOptions });
+    setQuestion(nextQuestion);
+    setEditOptions(nextOptions);
+  };
+
+  const handleSave = () => {
+    const nextConfig = buildLiveConfig(question, editOptions);
+    if (!nextConfig) return;
+    updateConfig(nextConfig);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const confirmReset = () => {
-    handleReset();
-    setShowResetConfirm(false);
+  const handleUnlock = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (adminPassword === ADMIN_PASSWORD) {
+      setIsAuthorized(true);
+      sessionStorage.setItem(ADMIN_AUTH_KEY, "true");
+      setAdminPassword("");
+      setAuthError("");
+      return;
+    }
+    setAuthError("Incorrect password");
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("pollAdminAuth");
-    window.location.hash = "#/poll";
+  const handleLock = () => {
+    setIsAuthorized(false);
+    sessionStorage.removeItem(ADMIN_AUTH_KEY);
+    setAdminPassword("");
+    setAuthError("");
   };
 
-  const isValid = question.trim() !== "" && editOptions.filter((o) => o.label.trim() !== "").length >= 2;
+  const isValid = editOptions.length >= 2;
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/30 to-indigo-50/40">
+        <div className="mx-auto flex min-h-screen w-full max-w-md items-center px-5">
+          <div className="w-full rounded-3xl border border-slate-200/70 bg-white p-8 shadow-sm">
+            <h1 className="text-2xl font-bold text-slate-800">Admin Access</h1>
+            <p className="mt-2 text-sm text-slate-500">Enter the admin password to manage this poll.</p>
+            <form className="mt-6 space-y-3" onSubmit={handleUnlock}>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(event) => {
+                  setAdminPassword(event.target.value);
+                  if (authError) setAuthError("");
+                }}
+                placeholder="Password"
+                className="h-12 w-full rounded-xl border-2 border-slate-200 bg-white px-4 text-base font-medium text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              />
+              {authError && <p className="text-sm font-medium text-red-500">{authError}</p>}
+              <button
+                type="submit"
+                className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 px-5 text-sm font-bold text-white transition-all hover:from-violet-600 hover:to-indigo-700"
+              >
+                Unlock Admin
+              </button>
+            </form>
+            <a
+              href="#/poll"
+              className="mt-4 inline-flex text-sm font-semibold text-indigo-600 transition-all hover:text-indigo-700"
+            >
+              Back to Poll
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/30 to-indigo-50/40">
@@ -365,15 +313,6 @@ function AdminPanel() {
           </div>
           <div className="flex items-center gap-2">
             <a
-              href="#/results"
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:border-purple-300 hover:bg-purple-50 hover:text-purple-600 hover:shadow-sm"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <span className="hidden sm:inline">Results View</span>
-            </a>
-            <a
               href="#/poll"
               className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:shadow-sm"
             >
@@ -384,15 +323,17 @@ function AdminPanel() {
               <span className="hidden sm:inline">View Poll</span>
             </a>
             <button
-              onClick={handleLogout}
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-600 hover:shadow-sm"
-              title="Sign out"
+              onClick={handleLock}
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:border-slate-300 hover:bg-slate-50"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              <span className="hidden sm:inline">Sign Out</span>
+              Lock
             </button>
+            <a
+              href="#/admin/graph"
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition-all hover:bg-indigo-100"
+            >
+              Graph View
+            </a>
           </div>
         </div>
       </header>
@@ -477,8 +418,8 @@ function AdminPanel() {
               )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-4">
+            {/* Actions */}
+            <div className="flex items-center gap-4">
               <button
                 onClick={handleSave}
                 disabled={!isValid}
@@ -505,6 +446,15 @@ function AdminPanel() {
                   </>
                 )}
               </button>
+              <button
+                onClick={handleReset}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-red-200 bg-red-50 px-6 py-3.5 text-base font-bold text-red-600 transition-all hover:bg-red-100 active:scale-95"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Reset Poll
+              </button>
               {!isValid && (
                 <p className="text-sm text-red-500">
                   {!question.trim()
@@ -512,51 +462,6 @@ function AdminPanel() {
                     : "You need at least 2 options with labels"}
                 </p>
               )}
-            </div>
-
-            {/* Reset Poll Section */}
-            <div className="rounded-3xl border border-red-200/60 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-red-500">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                Danger Zone
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-800">Reset Poll Votes</h3>
-                  <p className="text-xs text-slate-400">
-                    Clear all {totalVotes} vote{totalVotes !== 1 ? "s" : ""} and allow everyone to vote again.
-                  </p>
-                </div>
-                {!showResetConfirm ? (
-                  <button
-                    onClick={() => setShowResetConfirm(true)}
-                    className="inline-flex items-center gap-2 rounded-xl border-2 border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 transition-all hover:border-red-300 hover:bg-red-50 hover:shadow-sm active:scale-95"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Reset Votes
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-red-600">Are you sure?</span>
-                    <button
-                      onClick={confirmReset}
-                      className="rounded-lg bg-red-500 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-red-600 active:scale-95"
-                    >
-                      Yes, Reset
-                    </button>
-                    <button
-                      onClick={() => setShowResetConfirm(false)}
-                      className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-slate-50 active:scale-95"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 
@@ -609,9 +514,11 @@ function AdminPanel() {
                       return (
                         <div key={option.id} className="space-y-1">
                           <div className="flex items-center justify-between text-xs">
-                            <span className={cn("font-semibold", theme.color)}>
-                              {option.label || "..."}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className={cn("font-semibold", theme.color)}>
+                                {option.label || "..."}
+                              </span>
+                            </div>
                             <span className="font-bold text-slate-600">{fakePercentage}%</span>
                           </div>
                           <div className="h-6 w-full overflow-hidden rounded-lg bg-slate-100">
@@ -631,18 +538,15 @@ function AdminPanel() {
               </div>
 
               {/* Tips */}
-              <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
                 <div className="flex items-start gap-2">
-                  <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="text-xs text-violet-700">
+                  <span className="text-lg">💡</span>
+                  <div className="text-xs text-amber-700">
                     <p className="font-semibold">Tips:</p>
                     <ul className="mt-1 space-y-1 list-disc pl-4">
                       <li>Choose colors that help differentiate options</li>
                       <li>Keep labels short for the best visual results</li>
                       <li>Use Quick Templates to start from a preset</li>
-                      <li>Open the Results View for a presentation-friendly display</li>
                     </ul>
                   </div>
                 </div>
@@ -655,7 +559,7 @@ function AdminPanel() {
       {/* Footer */}
       <footer className="border-t border-slate-200/60 bg-white/50 backdrop-blur-sm">
         <div className="mx-auto max-w-4xl px-6 py-4 text-center text-xs text-slate-400">
-          Poll Admin Panel — Changes are saved to your browser
+          Poll Admin Panel • Changes are saved to Airtable
         </div>
       </footer>
 

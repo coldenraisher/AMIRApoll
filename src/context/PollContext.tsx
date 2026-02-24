@@ -1,4 +1,13 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 export interface PollOption {
   id: string;
@@ -7,16 +16,29 @@ export interface PollOption {
   colorTheme: ColorTheme;
 }
 
-export type ColorTheme = "sky" | "emerald" | "red" | "orange" | "purple" | "pink" | "amber" | "teal" | "indigo" | "lime";
+export type ColorTheme =
+  | "sky"
+  | "emerald"
+  | "red"
+  | "orange"
+  | "purple"
+  | "pink"
+  | "amber"
+  | "teal"
+  | "indigo"
+  | "lime";
 
-export const COLOR_THEMES: Record<ColorTheme, {
-  color: string;
-  bgColor: string;
-  borderColor: string;
-  hoverColor: string;
-  barColor: string;
-  ringColor: string;
-}> = {
+export const COLOR_THEMES: Record<
+  ColorTheme,
+  {
+    color: string;
+    bgColor: string;
+    borderColor: string;
+    hoverColor: string;
+    barColor: string;
+    ringColor: string;
+  }
+> = {
   sky: {
     color: "text-sky-700",
     bgColor: "bg-sky-50",
@@ -99,16 +121,26 @@ export const COLOR_THEMES: Record<ColorTheme, {
   },
 };
 
+const AVAILABLE_THEMES = Object.keys(COLOR_THEMES) as ColorTheme[];
 const DEFAULT_QUESTION = "What's your favorite frontend framework?";
-
 const DEFAULT_OPTIONS: PollOption[] = [
   { id: "a", label: "React", votes: 0, colorTheme: "sky" },
   { id: "b", label: "Vue", votes: 0, colorTheme: "emerald" },
   { id: "c", label: "Angular", votes: 0, colorTheme: "red" },
   { id: "d", label: "Svelte", votes: 0, colorTheme: "orange" },
 ];
+const DEFAULT_POLL_ID = import.meta.env.VITE_POLL_ID || "default-poll";
+const API_BASE = "/.netlify/functions";
+const VOTER_ID_KEY = "pollVoterId";
+const VOTED_FOR_KEY_PREFIX = "pollVotedFor";
 
 interface PollConfig {
+  question: string;
+  options: PollOption[];
+}
+
+interface PollStateResponse {
+  pollId: string;
   question: string;
   options: PollOption[];
 }
@@ -128,94 +160,219 @@ interface PollContextType {
 
 const PollContext = createContext<PollContextType | null>(null);
 
-function loadConfig(): PollConfig {
-  try {
-    const stored = localStorage.getItem("pollConfig");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return {
-        question: parsed.question || DEFAULT_QUESTION,
-        options: (parsed.options || DEFAULT_OPTIONS).map((o: PollOption) => ({ ...o, votes: 0 })),
-      };
-    }
-  } catch {
-    // ignore
+function getVotedForKey(pollId: string): string {
+  return `${VOTED_FOR_KEY_PREFIX}:${pollId}`;
+}
+
+function getOrCreateVoterId(): string {
+  const existing = localStorage.getItem(VOTER_ID_KEY);
+  if (existing) return existing;
+  const next = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+  localStorage.setItem(VOTER_ID_KEY, next);
+  return next;
+}
+
+function normalizeOptions(options: PollOption[]): PollOption[] {
+  return options.map((option, index) => ({
+    id: option.id || `option-${index + 1}`,
+    label: option.label?.trim() || `Option ${index + 1}`,
+    votes: Math.max(option.votes || 0, 0),
+    colorTheme: option.colorTheme || AVAILABLE_THEMES[index % AVAILABLE_THEMES.length],
+  }));
+}
+
+function normalizeState(state: Partial<PollStateResponse>): PollStateResponse {
+  const question = typeof state.question === "string" && state.question.trim() ? state.question.trim() : DEFAULT_QUESTION;
+  const options = normalizeOptions(Array.isArray(state.options) ? state.options : DEFAULT_OPTIONS);
+  const pollId = state.pollId || DEFAULT_POLL_ID;
+
+  return {
+    pollId,
+    question,
+    options: options.length >= 2 ? options : DEFAULT_OPTIONS,
+  };
+}
+
+async function fetchPollState(pollId: string): Promise<PollStateResponse> {
+  const response = await fetch(`${API_BASE}/poll-state?pollId=${encodeURIComponent(pollId)}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch poll state: ${response.status}`);
   }
-  return { question: DEFAULT_QUESTION, options: DEFAULT_OPTIONS };
-}
 
-function loadVotes(): Record<string, number> {
-  try {
-    const stored = localStorage.getItem("pollVotes");
-    if (stored) return JSON.parse(stored);
-  } catch {
-    // ignore
-  }
-  return {};
-}
-
-function saveConfig(config: PollConfig) {
-  localStorage.setItem("pollConfig", JSON.stringify(config));
-}
-
-function saveVotes(options: PollOption[]) {
-  const votes: Record<string, number> = {};
-  options.forEach(o => { votes[o.id] = o.votes; });
-  localStorage.setItem("pollVotes", JSON.stringify(votes));
+  const payload = (await response.json()) as Partial<PollStateResponse>;
+  return normalizeState(payload);
 }
 
 export function PollProvider({ children }: { children: ReactNode }) {
-  const initialConfig = loadConfig();
-  const savedVotes = loadVotes();
-
-  // Restore votes from localStorage
-  const initialOptions = initialConfig.options.map(o => ({
-    ...o,
-    votes: savedVotes[o.id] || 0,
-  }));
-
-  const [question, setQuestion] = useState(initialConfig.question);
-  const [options, setOptions] = useState<PollOption[]>(initialOptions);
+  const pollId = DEFAULT_POLL_ID;
+  const [question, setQuestion] = useState(DEFAULT_QUESTION);
+  const [options, setOptions] = useState<PollOption[]>(DEFAULT_OPTIONS);
   const [hasVoted, setHasVoted] = useState(false);
   const [votedFor, setVotedFor] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const confettiTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const totalVotes = options.reduce((sum, o) => sum + o.votes, 0);
-  const maxVotes = Math.max(...options.map((o) => o.votes), 0);
+  const votedForKey = useMemo(() => getVotedForKey(pollId), [pollId]);
 
-  // Persist votes whenever they change
+  const syncLocalVoteState = useCallback(
+    (nextOptions: PollOption[]) => {
+      const localVote = localStorage.getItem(votedForKey);
+      if (localVote && nextOptions.some((option) => option.id === localVote)) {
+        setVotedFor(localVote);
+        setHasVoted(true);
+        return;
+      }
+
+      localStorage.removeItem(votedForKey);
+      setVotedFor(null);
+      setHasVoted(false);
+    },
+    [votedForKey]
+  );
+
+  const applyState = useCallback(
+    (state: PollStateResponse) => {
+      const normalized = normalizeState(state);
+      setQuestion(normalized.question);
+      setOptions(normalized.options);
+      syncLocalVoteState(normalized.options);
+    },
+    [syncLocalVoteState]
+  );
+
+  const refreshState = useCallback(async () => {
+    try {
+      const state = await fetchPollState(pollId);
+      applyState(state);
+    } catch {
+      // Keep the current in-memory UI state if backend is unavailable.
+    }
+  }, [applyState, pollId]);
+
   useEffect(() => {
-    saveVotes(options);
-  }, [options]);
+    void refreshState();
+    const interval = setInterval(() => {
+      void refreshState();
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [refreshState]);
+
+  const totalVotes = options.reduce((sum, option) => sum + option.votes, 0);
+  const maxVotes = Math.max(...options.map((option) => option.votes), 0);
 
   const handleVote = useCallback(
     (id: string) => {
-      if (hasVoted) return;
-      setOptions((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, votes: o.votes + 1 } : o))
-      );
+      if (hasVoted || !options.some((option) => option.id === id)) return;
+
+      setOptions((prev) => prev.map((option) => (option.id === id ? { ...option, votes: option.votes + 1 } : option)));
       setHasVoted(true);
       setVotedFor(id);
+      localStorage.setItem(votedForKey, id);
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 2000);
+      if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
+      confettiTimeoutRef.current = setTimeout(() => setShowConfetti(false), 2000);
+
+      const voterId = getOrCreateVoterId();
+      const voteId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+
+      void fetch(`${API_BASE}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pollId,
+          optionId: id,
+          voterId,
+          voteId,
+        }),
+      })
+        .then(async (response) => {
+          const body = (await response.json()) as { state?: PollStateResponse };
+          if (!response.ok) {
+            throw new Error("Vote failed");
+          }
+          if (body.state) applyState(body.state);
+        })
+        .catch(async () => {
+          localStorage.removeItem(votedForKey);
+          setHasVoted(false);
+          setVotedFor(null);
+          await refreshState();
+        });
     },
-    [hasVoted]
+    [applyState, hasVoted, options, pollId, refreshState, votedForKey]
   );
 
   const handleReset = useCallback(() => {
-    setOptions((prev) => prev.map((o) => ({ ...o, votes: 0 })));
-    setHasVoted(false);
-    setVotedFor(null);
-    localStorage.removeItem("pollVotes");
-  }, []);
+    void fetch(`${API_BASE}/reset-votes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pollId }),
+    })
+      .then(async (response) => {
+        const body = (await response.json()) as { state?: PollStateResponse };
+        if (!response.ok) throw new Error("Failed reset");
+        if (body.state) {
+          applyState(body.state);
+        } else {
+          await refreshState();
+        }
+      })
+      .catch(async () => {
+        await refreshState();
+      })
+      .finally(() => {
+        localStorage.removeItem(votedForKey);
+        setHasVoted(false);
+        setVotedFor(null);
+      });
+  }, [applyState, pollId, refreshState, votedForKey]);
 
-  const updateConfig = useCallback((config: PollConfig) => {
-    setQuestion(config.question);
-    setOptions(config.options.map(o => ({ ...o, votes: 0 })));
-    setHasVoted(false);
-    setVotedFor(null);
-    localStorage.removeItem("pollVotes");
-    saveConfig(config);
+  const updateConfig = useCallback(
+    (config: PollConfig) => {
+      const normalizedConfig = normalizeState({
+        pollId,
+        question: config.question,
+        options: config.options.map((option) => ({ ...option, votes: 0 })),
+      });
+
+      void fetch(`${API_BASE}/poll-config`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pollId,
+          question: normalizedConfig.question,
+          options: normalizedConfig.options.map(({ id, label, colorTheme }) => ({
+            id,
+            label,
+            colorTheme,
+          })),
+        }),
+      })
+        .then(async (response) => {
+          const body = (await response.json()) as { state?: PollStateResponse };
+          if (!response.ok) throw new Error("Failed update");
+          if (body.state) {
+            applyState(body.state);
+          } else {
+            await refreshState();
+          }
+        })
+        .catch(async () => {
+          await refreshState();
+        })
+        .finally(() => {
+          localStorage.removeItem(votedForKey);
+          setHasVoted(false);
+          setVotedFor(null);
+        });
+    },
+    [applyState, pollId, refreshState, votedForKey]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (confettiTimeoutRef.current) clearTimeout(confettiTimeoutRef.current);
+    };
   }, []);
 
   return (

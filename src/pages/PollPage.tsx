@@ -67,7 +67,7 @@ function ResultBar({
           </span>
           {isLeading && (
             <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700">
-              Leading
+              👑 Leading
             </span>
           )}
         </div>
@@ -106,24 +106,22 @@ function ResultBar({
 
 function Confetti({ show }: { show: boolean }) {
   if (!show) return null;
-  const shapes = ["*", "+", "o", "~", "#"];
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
       {Array.from({ length: 30 }).map((_, i) => (
         <div
           key={i}
-          className="absolute animate-bounce text-indigo-400 font-bold"
+          className="absolute animate-bounce"
           style={{
             left: `${Math.random() * 100}%`,
             top: `-${Math.random() * 20}%`,
             animationDelay: `${Math.random() * 0.5}s`,
             animationDuration: `${1 + Math.random() * 2}s`,
             fontSize: `${12 + Math.random() * 16}px`,
-            opacity: 0.6,
-            color: ["#6366f1", "#8b5cf6", "#a855f7", "#ec4899", "#06b6d4"][Math.floor(Math.random() * 5)],
+            opacity: 0.8,
           }}
         >
-          {shapes[Math.floor(Math.random() * shapes.length)]}
+          {["🎉", "✨", "🎊", "⭐", "🌟"][Math.floor(Math.random() * 5)]}
         </div>
       ))}
     </div>
@@ -172,13 +170,13 @@ export function PollPage() {
           <div className="flex items-center gap-4">
             <a
               href="#/admin"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:shadow-md active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:shadow-sm"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              Admin
+              <span className="hidden sm:inline">Admin</span>
             </a>
             <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
               <span className="hidden sm:inline">LIVE</span>
@@ -205,7 +203,7 @@ export function PollPage() {
               </h2>
               {!hasVoted && (
                 <p className="mt-3 text-sm text-slate-400">
-                  Choose your answer below
+                  Choose your answer below 👇
                 </p>
               )}
             </div>
@@ -223,13 +221,6 @@ export function PollPage() {
               ))}
             </div>
 
-            {hasVoted && (
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-center">
-                <p className="text-sm font-semibold text-emerald-700">
-                  Thank you for voting! Results are shown live.
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Right: Results */}
@@ -260,9 +251,7 @@ export function PollPage() {
 
               {totalVotes === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center">
-                  <svg className="h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
+                  <div className="text-4xl">🗳️</div>
                   <p className="mt-3 text-sm font-medium text-slate-400">
                     No votes yet
                   </p>
@@ -315,7 +304,7 @@ export function PollPage() {
       {/* Footer */}
       <footer className="border-t border-slate-200/60 bg-white/50 backdrop-blur-sm">
         <div className="mx-auto max-w-5xl px-6 py-4 text-center text-xs text-slate-400">
-          Built with React & Tailwind CSS
+          Built with React & Tailwind CSS • Real-time audience polling
         </div>
       </footer>
     </div>
