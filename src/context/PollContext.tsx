@@ -122,12 +122,12 @@ export const COLOR_THEMES: Record<
 };
 
 const AVAILABLE_THEMES = Object.keys(COLOR_THEMES) as ColorTheme[];
-const DEFAULT_QUESTION = "What's your favorite frontend framework?";
+const DEFAULT_QUESTION = "What's your favorite Sel-Directed IRA?";
 const DEFAULT_OPTIONS: PollOption[] = [
-  { id: "a", label: "React", votes: 0, colorTheme: "sky" },
-  { id: "b", label: "Vue", votes: 0, colorTheme: "emerald" },
-  { id: "c", label: "Angular", votes: 0, colorTheme: "red" },
-  { id: "d", label: "Svelte", votes: 0, colorTheme: "orange" },
+  { id: "a", label: "American IRA", votes: 0, colorTheme: "sky" },
+  { id: "b", label: "American IRA", votes: 0, colorTheme: "emerald" },
+  { id: "c", label: "American IRA", votes: 0, colorTheme: "red" },
+  { id: "d", label: "American IRA", votes: 0, colorTheme: "orange" },
 ];
 const DEFAULT_POLL_ID = import.meta.env.VITE_POLL_ID || "default-poll";
 const API_BASE = "/.netlify/functions";
