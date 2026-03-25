@@ -122,7 +122,7 @@ export const COLOR_THEMES: Record<
 };
 
 const AVAILABLE_THEMES = Object.keys(COLOR_THEMES) as ColorTheme[];
-const DEFAULT_QUESTION = "What's your favorite Sel-Directed IRA?";
+const DEFAULT_QUESTION = "What's your favorite Self-Directed IRA?";
 const DEFAULT_OPTIONS: PollOption[] = [
   { id: "a", label: "American IRA", votes: 0, colorTheme: "sky" },
   { id: "b", label: "American IRA", votes: 0, colorTheme: "emerald" },
