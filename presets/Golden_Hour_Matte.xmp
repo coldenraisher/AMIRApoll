@@ -21,20 +21,20 @@
    crs:IncrementalTemperature="+12"
    crs:IncrementalTint="+5"
    crs:Exposure2012="-0.05"
-   crs:Contrast2012="+12"
-   crs:Highlights2012="-15"
-   crs:Shadows2012="+12"
-   crs:Whites2012="+8"
-   crs:Blacks2012="-5"
-   crs:Texture="+8"
-   crs:Clarity2012="+5"
-   crs:Dehaze="+3"
+   crs:Contrast2012="+5"
+   crs:Highlights2012="-25"
+   crs:Shadows2012="+20"
+   crs:Whites2012="+2"
+   crs:Blacks2012="+2"
+   crs:Texture="+6"
+   crs:Clarity2012="+3"
+   crs:Dehaze="+2"
    crs:Vibrance="+25"
    crs:Saturation="+5"
-   crs:ParametricShadows="+5"
-   crs:ParametricDarks="0"
-   crs:ParametricLights="+5"
-   crs:ParametricHighlights="-5"
+   crs:ParametricShadows="+8"
+   crs:ParametricDarks="+3"
+   crs:ParametricLights="+3"
+   crs:ParametricHighlights="-8"
    crs:ParametricShadowSplit="25"
    crs:ParametricMidtoneSplit="50"
    crs:ParametricHighlightSplit="75"
@@ -49,7 +49,7 @@
    crs:HueAdjustmentRed="-5"
    crs:HueAdjustmentOrange="-3"
    crs:HueAdjustmentYellow="-10"
-   crs:HueAdjustmentGreen="-15"
+   crs:HueAdjustmentGreen="-8"
    crs:HueAdjustmentAqua="-5"
    crs:HueAdjustmentBlue="-10"
    crs:HueAdjustmentPurple="0"
@@ -115,7 +115,7 @@
    crs:ShadowTint="0"
    crs:RedHue="+5"
    crs:RedSaturation="+15"
-   crs:GreenHue="-8"
+   crs:GreenHue="-3"
    crs:GreenSaturation="-5"
    crs:BlueHue="-5"
    crs:BlueSaturation="+20"
@@ -150,11 +150,11 @@
    </crs:Description>
    <crs:ToneCurvePV2012>
     <rdf:Seq>
-     <rdf:li>0, 3</rdf:li>
-     <rdf:li>48, 38</rdf:li>
-     <rdf:li>128, 130</rdf:li>
-     <rdf:li>208, 218</rdf:li>
-     <rdf:li>255, 253</rdf:li>
+     <rdf:li>0, 6</rdf:li>
+     <rdf:li>56, 56</rdf:li>
+     <rdf:li>128, 128</rdf:li>
+     <rdf:li>200, 202</rdf:li>
+     <rdf:li>255, 247</rdf:li>
     </rdf:Seq>
    </crs:ToneCurvePV2012>
    <crs:ToneCurvePV2012Red>
